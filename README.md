@@ -6,8 +6,8 @@ Agent Based Modelling.
 ## Epidemiology
 
 [Minimal SIR model](./Minimal%20SIR.nlogo)
-
 <details>
+[Run on the web.](https://netlogo-web.org/web?url=https%3A%2F%2Fraw.githubusercontent.com/stochanswers/netlogo/refs/heads/main/Minimal%20SIR.nlogo)
 <summary>WHAT IS IT?</summary>
 
 ![Minimal SIR model](./epidemic.png)
