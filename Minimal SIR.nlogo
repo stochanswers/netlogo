@@ -29,9 +29,9 @@ to make-turtles
     set marked? false
   ]
   ask individual 0 [set state "INFECTED"]
-  if initial-immune-proportion > 0 [
+  if prior-immunity-proportion > 0 [
     let index 1
-    repeat initial-immune-proportion * population [
+    repeat prior-immunity-proportion * population [
       ask individual index [set state "RECOVERED"]
       set index (index + 1)
       if index >= population [ stop ]
@@ -185,10 +185,10 @@ NIL
 HORIZONTAL
 
 PLOT
-8
+10
 179
 345
-371
+418
 Compartments
 Time
 Individuals
@@ -224,10 +224,10 @@ NIL
 SLIDER
 10
 66
-229
+230
 99
-initial-immune-proportion
-initial-immune-proportion
+prior-immunity-proportion
+prior-immunity-proportion
 0
 1
 0.0
@@ -252,10 +252,10 @@ NIL
 HORIZONTAL
 
 PLOT
-8
-377
-264
-568
+10
+426
+262
+622
 Reproduction number
 Time
 Number
@@ -268,6 +268,25 @@ false
 "set-plot-y-range 0 reproduction-number" ""
 PENS
 "default" 1.0 0 -16777216 true "" "plot reproduction-number"
+
+PLOT
+503
+426
+762
+622
+Ternary plot
+Susceptible
+Recovered
+0.0
+10.0
+0.0
+10.0
+true
+false
+"set-plot-x-range 0 (count individuals)\nset-plot-y-range 0 (count individuals)\nset-current-plot-pen \"pen-1\"\nplotxy 0 (count individuals)\nplotxy (count individuals) 0\nplotxy 0 0\nplotxy 0 (count individuals)" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plotxy count individuals with [state = \"SUSCEPTIBLE\"] count individuals with [state = \"RECOVERED\"]"
+"pen-1" 1.0 0 -5298144 true "" ""
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -311,17 +330,21 @@ Move the sliders then press setup. Perform a simulation and note how the epidemi
 
 ## THINGS TO NOTICE
 
+### Ternary plot
+
+Since the sum of the number of individuals in the three compartments is constant they can be plotted within a triangle. Note that the diagonal axis corresponds to the number of infected being zero.
+
 ### Herd immunity
 
-At the end of a simulation some individuals may still be susceptible. This is because of an effect known as herd immunity. Note that they are not immune and a subsequent outbreak could occur.
+At the end of a simulation some individuals may still be susceptible. This is because of an effect known as herd immunity. Note that they are not immune and a subsequent outbreak could occur. To demonstrate this re-run with more prior immunity.
 
 ### Variation of the reproduction number
 
-Note that, in general, this does not decrease with time unlike in the  standard SIR model.
+If this were constant then the epidemic would be growing exponentially. If this were the standard SIR model instead then it would be a smoothly decreasing function. For no prior immunity the initial step plots a value of R0 which matches its definition. Note that, in general, this does not decrease with time.
 
 ### Selecting R0 others
 
-Each infected picking the number of susceptible is equivalent to sampling (without replacement) from a hypergeometric probability distribution.
+Each infected picking the number of susceptible is equivalent to sampling (without replacement) R0 individuals from a hypergeometric probability distribution.
 
 ### Matching exponential growth
 
@@ -348,7 +371,7 @@ Take two packs of playing cards, cut them both down to the same 31 cards. One wi
 
 ### Social networks
 
-In this model each individual has equal chance to infect every other. i.e. The population forms a complete graph. Extending to a sparse graph, specifically a social network, provides a better model. when performed on a network formed by voles the resultant ensemble average behaviour compared to a complete graph showed a lower number of infections and a greater number of steps. The reader might like to think of what this means in the contexts of lockdowns and of seasons.
+In this model each individual has equal chance to infect every other. i.e. The population forms a complete graph. Extending to a sparse graph, specifically a social network, provides a better model. When performed on a network formed by voles the resultant ensemble average behaviour compared to a complete graph showed a lower number of infections and a greater number of steps. The reader might like to think of what this means in the contexts of lockdowns and of seasons.
 
 ### Stochastic calculus
 
