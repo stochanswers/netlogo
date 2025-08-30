@@ -105,7 +105,7 @@ to update  ;; individual procedure
 end
 
 
-; Copyright 2003 Uri Wilensky.
+; Copyright 2025 Zebedee Mason.
 ; See Info tab for full copyright and license.
 @#$#@#$#@
 GRAPHICS-WINDOW
