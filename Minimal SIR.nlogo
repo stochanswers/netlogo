@@ -312,8 +312,7 @@ The basic reproduction number, R0, is defined as the number of individuals that 
 ### Go
 
 Initially one individual is infected. At each step the simulation proceeds by each
-infected individual selecting R0 others at random and irrespective of their state. At
-the end of the step the infected become recovered and those susceptible that were selected become infected. The simulation finishes when there are no longer any infected.
+infected individual selecting R0 others at random and irrespective of their state - the model is said to be "well mixed". At the end of the step the infected become recovered and those susceptible that were selected become infected. The simulation finishes when there are no longer any infected.
 
 As the simulation progresses lines are drawn between the previous generation of infected and those individuals that they were in contact with. The colour of the individuals changes according to the code:
 
@@ -321,7 +320,7 @@ As the simulation progresses lines are drawn between the previous generation of 
 * Infected - Red.
 * Recovered - Green.
 
-There are two plots of how the statistics vary as the iterations proceed. The first shows how the individuals are divided between the three compartments. The second how the reproduction number varies between zero and R0.
+There are three plots of how the statistics vary as the iterations proceed. The first shows how the individuals are divided between the three compartments. The second how the reproduction number varies between zero and R0. The third shows how the three compartments vary with respect to each other.
 
 ## HOW TO USE IT
 
@@ -329,6 +328,10 @@ Move the sliders then press setup. Perform a simulation and note how the epidemi
 
 
 ## THINGS TO NOTICE
+
+### Sigmoid curves
+
+When plotted against time the number of susceptible always decrease. i.e. the curve is monotonic descreasing. Similarly the number of recovered is monotonic increasing. For the standard SIR model these are both sigmoid (S-shaped) curves. For a given simulation the plots of the minimal SIR model may be more or less sigmoid.
 
 ### Ternary plot
 
@@ -340,7 +343,9 @@ At the end of a simulation some individuals may still be susceptible. This is be
 
 ### Variation of the reproduction number
 
-If this were constant then the epidemic would be growing exponentially. If this were the standard SIR model instead then it would be a smoothly decreasing function. For no prior immunity the initial step plots a value of R0 which matches its definition. Note that, in general, this does not decrease with time.
+If this were constant then the epidemic would be growing exponentially. For no prior immunity the initial step plots a value of R0 which matches its definition. Note that, in general, this does not decrease with time. When the reproduction number is equal to one then every infected individual infects only one other and thus there is a peak in the plot of the number of infected versus time.
+
+If this were the standard SIR model instead then it would be the smoothly decreasing function R0 x S / N where S is the number of susceptible and N is the size of the population.
 
 ### Selecting R0 others
 
