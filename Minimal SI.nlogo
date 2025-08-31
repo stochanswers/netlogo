@@ -245,7 +245,7 @@ PENS
 
 Do you know how an epidemic grows? One infects two, two infect four or three or two or one or none. All with different probabilities and a weighted average of logistic growth.
 
-The Minimal SI model is a compartmental model of an epidemic that averages to the SI model. Each individual within a population is in one of two states known, in epidemic modelling, as compartments: 
+The Minimal SI model is a discrete stochastic compartmental model of an epidemic that averages to the (ordinary differential equation) SI model. Each individual within a population is in one of two states known, in epidemic modelling, as compartments: 
 
 * S - Susceptible to infection.
 * I - Infected and infectious.
