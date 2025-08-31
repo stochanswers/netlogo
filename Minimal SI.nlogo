@@ -3,7 +3,7 @@ globals [reproduction-number old-infected new-infected]
 
 breed [individuals individual]
 individuals-own [
-  state                   ;; my current state: "INFECTED", "RECOVERED", or "SUSCEPTIBLE"
+  state                   ;; my current state: "INFECTED", or "SUSCEPTIBLE"
   marked?                 ;; whether I'm currently marked
 ]
 
@@ -29,14 +29,6 @@ to make-turtles
     set marked? false
   ]
   ask individual 0 [set state "INFECTED"]
-  if prior-immunity-proportion > 0 [
-    let index 1
-    repeat prior-immunity-proportion * population [
-      ask individual index [set state "RECOVERED"]
-      set index (index + 1)
-      if index >= population [ stop ]
-    ]
-  ]
 end
 
 to go
@@ -47,7 +39,7 @@ to go
 end
 
 to a-go
-  set old-infected new-infected
+  set old-infected (old-infected + new-infected)
   clear-links
   ask individuals [ infect ]
   set new-infected 0
@@ -69,9 +61,7 @@ to recolor
     ;; look up the color in the colors list indexed by our current state
     ifelse state = "SUSCEPTIBLE"
       [ set color blue ]
-      [ ifelse state = "INFECTED"
-        [ set color red ]
-        [ set color green ] ]
+      [ set color red ]
   ]
 end
 
@@ -93,9 +83,6 @@ end
 
 ;;
 to update  ;; individual procedure
-  if state = "INFECTED" [
-    set state "RECOVERED"
-  ]
   if marked? and state = "SUSCEPTIBLE"
   [
     set state "INFECTED"
@@ -137,9 +124,9 @@ ticks
 
 BUTTON
 10
-139
+86
 78
-172
+119
 NIL
 setup
 NIL
@@ -154,9 +141,9 @@ NIL
 
 BUTTON
 85
-139
+86
 154
-172
+119
 NIL
 go
 T
@@ -171,9 +158,9 @@ NIL
 
 SLIDER
 10
-30
+12
 235
-63
+45
 population
 population
 15
@@ -186,9 +173,9 @@ HORIZONTAL
 
 PLOT
 10
-179
+126
 345
-418
+365
 Compartments
 Time
 Individuals
@@ -202,13 +189,12 @@ true
 PENS
 "Susceptible" 1.0 0 -13345367 true "" "plot count individuals with [state = \"SUSCEPTIBLE\"]"
 "Infected" 1.0 0 -2674135 true "" "plot count individuals with [state = \"INFECTED\"]"
-"Recovered" 1.0 0 -10899396 true "" "plot count individuals with [state = \"RECOVERED\"]"
 
 BUTTON
 160
-139
+86
 235
-172
+119
 go once
 go
 NIL
@@ -223,24 +209,9 @@ NIL
 
 SLIDER
 10
-66
+49
 235
-99
-prior-immunity-proportion
-prior-immunity-proportion
-0
-1
-0.0
-0.1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-10
-102
-235
-135
+82
 basic-reproduction-number
 basic-reproduction-number
 2
@@ -253,9 +224,9 @@ HORIZONTAL
 
 PLOT
 10
-426
+373
 262
-622
+569
 Reproduction number
 Time
 Number
@@ -269,35 +240,15 @@ false
 PENS
 "default" 1.0 0 -16777216 true "" "plot reproduction-number"
 
-PLOT
-503
-426
-762
-622
-Ternary plot
-Susceptible
-Recovered
-0.0
-10.0
-0.0
-10.0
-true
-false
-"set-plot-x-range 0 (count individuals)\nset-plot-y-range 0 (count individuals)\nset-current-plot-pen \"pen-1\"\nplotxy 0 (count individuals)\nplotxy (count individuals) 0\nplotxy 0 0\nplotxy 0 (count individuals)" ""
-PENS
-"default" 1.0 0 -16777216 true "" "plotxy count individuals with [state = \"SUSCEPTIBLE\"] count individuals with [state = \"RECOVERED\"]"
-"pen-1" 1.0 0 -5298144 true "" ""
-
 @#$#@#$#@
 ## WHAT IS IT?
 
 Do you know how an epidemic grows? One infects two, two infect four or three or two or one or none. All with different probabilities and a weighted average of logistic growth.
 
-The Minimal SIR model is a compartmental model of an epidemic that averages to the standard SIR model (Kermack-McKendrick, 1927). Each individual within a population is in one of three states known, in epidemic modelling, as compartments: 
+The Minimal SI model is a compartmental model of an epidemic that averages to the SI model. Each individual within a population is in one of two states known, in epidemic modelling, as compartments: 
 
 * S - Susceptible to infection.
 * I - Infected and infectious.
-* R - Recovered and immune to re-infection.
 
 ## HOW IT WORKS
 
@@ -306,7 +257,6 @@ The Minimal SIR model is a compartmental model of an epidemic that averages to t
 There are sliders to vary:
 
 * The size of the population that will be divided into compartments.
-* The proportion of the population that has prior immunity.
 * The  basic reproduction number.
 
 The basic reproduction number, R0, is defined as the number of individuals that will be infected by one individual in an otherwise susceptible population.
@@ -314,15 +264,14 @@ The basic reproduction number, R0, is defined as the number of individuals that 
 ### Go
 
 Initially one individual is infected. At each step the simulation proceeds by each
-infected individual selecting R0 others at random and irrespective of their state - the model is said to be "well mixed". At the end of the step the infected become recovered and those susceptible that were selected become infected. The simulation finishes when there are no longer any infected.
+infected individual selecting R0 others at random and irrespective of their state - the model is said to be "well mixed". At the end of the step those susceptible that were selected become infected. The simulation finishes when there are no longer any susceptible. (Note there is a subtle bug which occasionally appears to thwart this being strictly true)
 
 As the simulation progresses lines are drawn between the previous generation of infected and those individuals that they were in contact with. The colour of the individuals changes according to the code:
 
 * Susceptible - Blue.
 * Infected - Red.
-* Recovered - Green.
 
-There are three plots of how the statistics vary as the iterations proceed. The first shows how the individuals are divided between the three compartments. The second how the reproduction number varies between zero and R0. The third shows how the three compartments vary with respect to each other.
+There are two plots of how the statistics vary as the iterations proceed. The first shows how the individuals are divided between the two compartments. The second how the reproduction number varies between zero and R0.
 
 ## HOW TO USE IT
 
@@ -333,21 +282,13 @@ Move the sliders then press setup. Perform a simulation and note how the epidemi
 
 ### Sigmoid curves
 
-When plotted against time the number of susceptible always decrease. i.e. the curve is monotonic decreasing. Similarly, the number of recovered is monotonic increasing. For the standard SIR model these are both sigmoid (S-shaped) curves. For a given simulation the plots of the minimal SIR model may be more or less sigmoid.
-
-### Ternary plot
-
-Since the sum of the number of individuals in the three compartments is constant, they can be plotted within a triangle. Note that the diagonal axis corresponds to the number of infected being zero.
-
-### Herd immunity
-
-At the end of a simulation some individuals may still be susceptible. This is because of an effect known as herd immunity. Note that they are not immune and a subsequent outbreak could occur. To demonstrate this re-run with more prior immunity.
+When plotted against time the number of susceptible always decrease. i.e. the curve is monotonic decreasing. Similarly, the number of infected is monotonic increasing and a mirror of the other curve. For the SI model these are both sigmoid (S-shaped) curves. For a given simulation the plots of the minimal SI model may be more or less sigmoid.
 
 ### Variation of the reproduction number
 
-If this were constant then the epidemic would be growing exponentially. For no prior immunity the initial step plots a value of R0 which matches its definition. Note that, in general, this does not decrease with time. When the reproduction number is equal to one then every infected individual infects only one other and thus there is a peak in the plot of the number of infected versus time.
+If this were constant then the epidemic would be growing exponentially. The initial step plots a value of R0 which matches its definition.
 
-If this were the standard SIR model instead then it would be the smoothly decreasing function R0 x S / N where S is the number of susceptible and N is the size of the population.
+If this were the SI model instead then it would be the smoothly decreasing function R0 x S / N where S is the number of susceptible and N = S + I is the size of the population.
 
 ### Selecting R0 others
 
@@ -361,8 +302,6 @@ calculated by forming a fraction where the numerator is the numbers from the siz
 Evaluating the fraction results in roughly a two in a million million chance. Truncating
 it to correspond to the first 8 individuals results in roughly an even chance.
 
-Note that at the end of exponential growth all the individuals have been infected.
-
 Actual examples of exponential growth appear to be all man-made:
 
 * Compound interest, which dates back to the Babylonians at least
@@ -373,31 +312,17 @@ Actual examples of exponential growth appear to be all man-made:
 
 ### Average behaviour
 
-If you are prepared to alter the code then scale the population to, say, 1000 individuals and run numerous times to create an ensemble of results at each step which are then averaged. Calculate the rate of change of the number of susceptible with respect to the number of recovered. Show that this matches the standard SIR model (Kermack-McKendrick, 1927) in which the infection curve is formed by an imbalance between logistic growth and exponential decay:
+If you are prepared to alter the code then scale the population to, say, 1000 individuals and run numerous times to create an ensemble of results at each step which are then averaged. Show that this matches the SI model in which the infection curve is formed bylogistic growth:
 
-dI/dt = (R0 x S / N - 1) x I x gamma
+dI/dt = (R0 x S / N) x I x gamma
 
-where N = S + I + R and gamma = 1
-
-### Epidemiological tag
-
-Take a group of children, tell them that when they are first tagged that they are to tag two others. Choose the first one then see whether, at the end of the game, they can be lined up in columns corresponding to generations of the epidemic.
-
-### Epidemic, the card game
-
-Take two packs of playing cards, cut them both down to the same 31 cards. One will be used to shuffle and deal from, the other to track the states. A column of cards is formed by considering all the cards in the previous column. For each of those cards remove the corresponding card from the shuffle, shuffle then deal two cards. If that is the first time that a card has been dealt then add the corresponding card to the new column. Return all three cards to the pack for the next shuffle, if you don't then you'll get exponential growth.
-
+where N = S + I and gamma = 1
 
 ## EXTENDING THE MODEL
 
-### Social networks
+### Minimal SIR model
 
-In this model each individual has equal chance to infect every other. i.e. The population forms a complete graph. Extending to a sparse graph, specifically a social network, provides a better model. When performed on a network formed by voles the resultant ensemble average behaviour compared to a complete graph showed a lower number of infections and a greater number of steps. The reader might like to think of what this means in the contexts of lockdowns and of seasons.
-
-### Stochastic calculus
-
-Repeated application of the hypergeometric distribution can be approximated by using a logit-normal distribution for the ratio of the reproduction number to the basic reproduction number. As such the model debunks various stochastic models whether they have a normal distribution for the reproduction number, use Gillespie’s algorithm or are based on the Reed-Frost model. The people who claimed that epidemics grow exponentially, however, were debunked in 1840 by Dr Farr if not before - exponential growth takes the number of infected to infinity unless some unspecified change happens at some unspecified time.
-
+Check out the Minimal SIR model for a more realistic model.
 
 ## CREDITS AND REFERENCES
 
