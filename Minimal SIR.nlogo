@@ -1,5 +1,11 @@
 extensions [array]
-globals [reproduction-number old-infected new-infected]
+globals [reproduction-number old-infected new-infected
+  time iteration
+  iteration-s iteration-i iteration-r iteration-r0x
+  sum-s sum-i sum-r
+  average-s average-i average-r average-r0x
+  kmck
+]
 
 breed [individuals individual]
 individuals-own [
@@ -7,12 +13,208 @@ individuals-own [
   marked?                 ;; whether I'm currently marked
 ]
 
+to clear-history [clear-all?]
+  if clear-all?
+  [
+    ;; clear the ensemble
+    set sum-s []
+    set sum-i []
+    set sum-r []
+    set average-s []
+    set average-i []
+    set average-r []
+    set average-r0x []
+    set kmck []
+    set iteration 0
+  ]
+
+  ;; clear the iteration
+  set iteration-s []
+  set iteration-i []
+  set iteration-r []
+  set iteration-r0x []
+  set time 0
+  set iteration (iteration + 1)
+end
+
+to-report count-state [compartment]
+  report (count individuals with [state = compartment])
+end
+
+to-report last-or-zero [last-index lsum]
+  ifelse last-index = -1
+  [
+    report 0
+  ]
+  [
+    report item last-index lsum
+  ]
+end
+
+to extend-sums
+  let last-index ((length sum-s) - 1)
+  while [ length sum-s < length iteration-s]
+  [
+    set sum-s lput (last-or-zero last-index sum-s) sum-s
+    set sum-i lput 0 sum-i
+    set sum-r lput (last-or-zero last-index sum-r) sum-r
+
+    set average-s lput 0 average-s
+    set average-i lput 0 average-i
+    set average-r lput 0 average-r
+    set average-r0x lput 0 average-r0x
+  ]
+end
+
+to-report add-sum [t1 t2 lsum liter]
+  report replace-item t1 lsum ((item t1 lsum) + (item t2 liter))
+end
+
+to-report get-average [t lsum lav]
+  report replace-item t lav ((item t lsum) / iteration)
+end
+
+to-report compute-reproduction-number [t lav]
+  ifelse t = 0
+  [
+    report basic-reproduction-number
+  ]
+  [
+    report (item t lav) / (item (t - 1) lav)
+  ]
+end
+
+to add-sums
+  let t 0
+  while [ t < length iteration-s]
+  [
+    set sum-s (add-sum t t sum-s iteration-s)
+    set sum-i (add-sum t t sum-i iteration-i)
+    set sum-r (add-sum t t sum-r iteration-r)
+
+    set average-s (get-average t sum-s average-s)
+    set average-i (get-average t sum-i average-i)
+    set average-r (get-average t sum-r average-r)
+
+    set average-r0x (replace-item t average-r0x (compute-reproduction-number t average-i))
+
+    set t (t + 1)
+  ]
+
+  let last-index ((length iteration-s) - 1)
+  while [ t < length sum-s]
+  [
+    set sum-s (add-sum t last-index sum-s iteration-s)
+    set sum-i (add-sum t last-index sum-i iteration-i)
+    set sum-r (add-sum t last-index sum-r iteration-r)
+
+    set average-s (get-average t sum-s average-s)
+    set average-i (get-average t sum-i average-i)
+    set average-r (get-average t sum-r average-r)
+
+    set average-r0x (replace-item t average-r0x (compute-reproduction-number t average-i))
+
+    set t (t + 1)
+  ]
+end
+
+to calc-kmck
+  set kmck []
+  set kmck lput basic-reproduction-number kmck
+  let t 1
+  while [ t < length average-s]
+  [
+    let val (item (t - 1) average-s)
+    set val (val + (item t average-s))
+    set val 0.5 * basic-reproduction-number * val
+    set val (val / population)
+    set kmck lput val kmck
+
+    set t (t + 1)
+  ]
+end
+
+to extend-history
+  if time >= (length iteration-s)
+  [
+    set iteration-s lput (count-state "SUSCEPTIBLE") iteration-s
+    set iteration-i lput (count-state "INFECTED") iteration-i
+    set iteration-r lput (count-state "RECOVERED") iteration-r
+    set iteration-r0x lput (compute-reproduction-number time iteration-i) iteration-r0x
+  ]
+
+  set time (time + 1)
+end
+
+to plot-array [y]
+  let t 0
+  while [ t < length y]
+  [
+    if t = 0
+    [
+      plot-pen-up
+    ]
+    plotxy t (item t y)
+    plot-pen-down
+    set t (t + 1)
+  ]
+end
+
+to plot-arrays [x y]
+  let t 0
+  while [ t < length x]
+  [
+    plotxy (item t x) (item t y)
+    set t (t + 1)
+  ]
+end
+
+to print-table [s i r r0x]
+  print "Time, S, I, R, Reproduction number"
+  let t 0
+  while [ t < length s]
+  [
+    type t type ", "
+    type (item t s) type ", "
+    type (item t i) type ", "
+    type (item t r) type ", "
+    print (item t r0x)
+    set t (t + 1)
+  ]
+end
+
+to print-report
+  type "Population " print population
+  type "Proportion of population with prior immunity " print prior-immunity-proportion
+  type "Basic reproduction number " print basic-reproduction-number
+  type "Iterations " print iteration
+  print ""
+  print "Current"
+  print-table iteration-s iteration-i iteration-r iteration-r0x
+  print ""
+  print "Ensemble average"
+  print-table average-s average-i average-r average-r0x
+  print ""
+end
+
+to dont-clear-all
+  ;;clear-globals
+  clear-ticks
+  clear-turtles
+  clear-patches
+  clear-drawing
+  clear-all-plots
+  clear-output
+end
+
 to setup
-  clear-all
+  dont-clear-all
+  clear-history (sum-s = 0)
   ;; set up the model
   make-turtles
   set reproduction-number basic-reproduction-number
   set new-infected 1
+  extend-history
   recolor
   reset-ticks
 end
@@ -60,6 +262,13 @@ to a-go
     set reproduction-number (new-infected / old-infected)
   ]
   recolor
+  extend-history
+  if new-infected = 0
+  [
+    extend-sums
+    add-sums
+    calc-kmck
+  ]
   tick
 end
 
@@ -198,11 +407,12 @@ Individuals
 100.0
 true
 true
-"set-plot-y-range 0 (count individuals)" ""
+"set-plot-y-range 0 (count individuals)\nset-current-plot-pen \"Averaged\"\nplot-array average-s\nplot-array average-i\nplot-array average-r" ""
 PENS
 "Susceptible" 1.0 0 -13345367 true "" "plot count individuals with [state = \"SUSCEPTIBLE\"]"
 "Infected" 1.0 0 -2674135 true "" "plot count individuals with [state = \"INFECTED\"]"
 "Recovered" 1.0 0 -10899396 true "" "plot count individuals with [state = \"RECOVERED\"]"
+"Averaged" 1.0 0 -7500403 true "" ""
 
 BUTTON
 160
@@ -265,14 +475,15 @@ Number
 5.0
 true
 false
-"set-plot-y-range 0 reproduction-number" ""
+"set-plot-y-range 0 reproduction-number\nset-current-plot-pen \"pen-1\"\nplot-array average-r0x" ""
 PENS
 "default" 1.0 0 -16777216 true "" "plot reproduction-number"
+"pen-1" 1.0 0 -7500403 true "" ""
 
 PLOT
-503
+269
 426
-762
+521
 622
 Ternary plot
 Susceptible
@@ -283,10 +494,64 @@ Recovered
 10.0
 true
 false
-"set-plot-x-range 0 (count individuals)\nset-plot-y-range 0 (count individuals)\nset-current-plot-pen \"pen-1\"\nplotxy 0 (count individuals)\nplotxy (count individuals) 0\nplotxy 0 0\nplotxy 0 (count individuals)" ""
+"let ind (count individuals)\nset-plot-x-range 0 ind\nset-plot-y-range 0 ind\nset-current-plot-pen \"pen-1\"\nplotxy 0 ind\nplotxy ind 0\nplotxy 0 0\nplotxy 0 ind\n\nset-current-plot-pen \"pen-2\"\nplot-arrays average-s average-r" ""
 PENS
 "default" 1.0 0 -16777216 true "" "plotxy count individuals with [state = \"SUSCEPTIBLE\"] count individuals with [state = \"RECOVERED\"]"
 "pen-1" 1.0 0 -5298144 true "" ""
+"pen-2" 1.0 0 -7500403 true "" ""
+
+BUTTON
+10
+629
+262
+662
+clear history
+clear-history true
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+0
+
+BUTTON
+269
+629
+521
+662
+print report
+print-report
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+PLOT
+528
+426
+780
+622
+Reproduction numbers
+Kermack-McKendrick
+Averaged
+0.0
+10.0
+0.0
+10.0
+true
+false
+"set-plot-x-range 0 basic-reproduction-number\nset-plot-y-range 0 basic-reproduction-number\n\nset-current-plot-pen \"pen-1\"\nplotxy 0 0\nplotxy basic-reproduction-number basic-reproduction-number\n\nset-current-plot-pen \"default\"\nplot-arrays kmck average-r0x" ""
+PENS
+"default" 1.0 0 -16777216 true "" ""
+"pen-1" 1.0 0 -2674135 true "" ""
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -373,11 +638,15 @@ Actual examples of exponential growth appear to be all man-made:
 
 ### Average behaviour
 
-If you are prepared to alter the code then scale the population to, say, 1000 individuals and run numerous times to create an ensemble of results at each step which are then averaged. Calculate the rate of change of the number of susceptible with respect to the number of recovered. Show that this matches the standard SIR model (Kermack-McKendrick, 1927) in which the infection curve is formed by an imbalance between logistic growth and exponential decay:
+The grey lines in the plots are the ensemble averaged behaviour of the current behaviour. There is also a plot of the reproduction rate calculated from the averaged behaviour versus the reproduction rate calculated from the standard SIR model (Kermack-McKendrick, 1927). The infection curve of which is formed by an imbalance between logistic growth and exponential decay:
 
 dI/dt = (R0 x S / N - 1) x I x gamma
 
 where N = S + I + R and gamma = 1
+
+i.e. The reproduction rate is given by R0 x S / N
+
+Set the population to the maximum with no prior immunity. Ensure the history is empty then create the average and see how it eventually coincides with the red line in the background of the plot.
 
 ### Epidemiological tag
 
